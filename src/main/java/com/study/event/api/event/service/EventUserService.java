@@ -36,9 +36,8 @@ public class EventUserService {
         boolean exists = eventUserRepository.existsByEmail(email);
         log.info("Checking email {} is duplicate : {}", email, exists);
 
-        // 중복이 아니면 선제적으로 회원가입을 시킴
-        // 일련의 후속 처리 (데이터베이스 처리, 이메일 보내는 것 ...)
-        if(!exists) processSignUp(email);
+        // 일련의 후속 처리 (데이터베이스 처리, 이메일 보내는 것...)
+        if (!exists) processSignUp(email);
 
         return exists;
     }
@@ -46,12 +45,12 @@ public class EventUserService {
     public void processSignUp(String email) {
 
         // 1. 임시 회원가입
-        EventUser newEvetUser = EventUser
+        EventUser newEventUser = EventUser
                 .builder()
                 .email(email)
                 .build();
 
-        EventUser savedUser = eventUserRepository.save(newEvetUser);
+        EventUser savedUser = eventUserRepository.save(newEventUser);
 
         // 2. 이메일 인증 코드 발송
         String code = sendVerificationEmail(email);
@@ -60,10 +59,11 @@ public class EventUserService {
         EmailVerification verification = EmailVerification.builder()
                 .verificationCode(code) // 인증 코드
                 .expiryDate(LocalDateTime.now().plusMinutes(5)) // 만료 시간 (5분 뒤)
-                .eventUser(savedUser) // FK (JPA는 정보를 통으로 주면 알아서 필요한 것만 꺼내서 씀)
+                .eventUser(savedUser) // FK
                 .build();
 
         emailVerificationRepository.save(verification);
+
     }
 
     // 이메일 인증 코드 보내기
@@ -108,4 +108,27 @@ public class EventUserService {
         return String.valueOf((int) (Math.random() * 9000 + 1000));
     }
 
+    // 인증코드 체크
+    public boolean isMatchCode(String email, String code) {
+
+        // 이메일을 통해 회원정보를 탐색
+        EventUser eventUser = eventUserRepository.findByEmail(email)
+                .orElse(null);
+
+        if (eventUser != null) {
+            // 인증코드가 있는지 탐색
+            EmailVerification ev = emailVerificationRepository.findByEventUser(eventUser).orElse(null);
+
+            // 인증코드가 있고 만료시간이 지나지 않았고 코드번호가 일치할 경우
+            if (
+                    ev != null
+                            && ev.getExpiryDate().isAfter(LocalDateTime.now())
+                            && code.equals(ev.getVerificationCode())
+            ) {
+                return true;
+            }
+
+        }
+        return false;
+    }
 }
