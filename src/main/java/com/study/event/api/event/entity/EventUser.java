@@ -60,4 +60,9 @@ public class EventUser {
     @Setter
     @Column(nullable = false)
     private boolean emailVerified;
+
+    public void confirm(String password) {
+        this.password = password;
+        this.createAt = LocalDateTime.now();
+    }
 }
