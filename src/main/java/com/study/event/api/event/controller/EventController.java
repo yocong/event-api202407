@@ -56,7 +56,7 @@ public class EventController {
     }
 
     // 단일 조회 요청
-    @PreAuthorize("hasAuthority('PREMIUM')")
+    @PreAuthorize("hasAuthority('PREMIUM') or hasAuthority('ADMIN')")
     @GetMapping("/{eventId}")
     public ResponseEntity<?> getEvent(@PathVariable Long eventId) {
 

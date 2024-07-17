@@ -48,6 +48,12 @@ public class SecurityConfig {
                 .and()
                 .authorizeRequests() // 요청 별로 인가 설정
 
+                // /events/* -> 뒤에 딱 하나만
+                // /events/** -> 뒤에 여러개
+                // hasAnyAuthority : 권한 이름 여러개 입력가능
+                // /events/*에서 DELETE 요청은 ADMIN만 가능하게 할거야~
+                .antMatchers(HttpMethod.DELETE,"/events/*").hasAnyAuthority("ADMIN")
+
                 // 아래의 URL요청은 로그인 없이 모두 허용!
                 .antMatchers("/", "/auth/**").permitAll()
                 // 나머지 요청은 전부 인증(로그인) 후 진행!
