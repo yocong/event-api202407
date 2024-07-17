@@ -54,7 +54,8 @@ public class SecurityConfig {
                 // /events/*에서 DELETE 요청은 ADMIN만 가능하게 할거야~
                 .antMatchers(HttpMethod.DELETE,"/events/*").hasAnyAuthority("ADMIN")
 
-                // 아래의 URL요청은 로그인 없이 모두 허용!
+                .antMatchers(HttpMethod.PUT, "/auth/promote").hasAuthority("COMMON")
+                // 아래의 URL요청은 로그인 없이 모두 허용! (auth에서는 promote 제외)
                 .antMatchers("/", "/auth/**").permitAll()
                 // 나머지 요청은 전부 인증(로그인) 후 진행!
                 .anyRequest().authenticated() // 인가 설정 on

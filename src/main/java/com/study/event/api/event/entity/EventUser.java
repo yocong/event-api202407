@@ -71,4 +71,10 @@ public class EventUser {
         this.password = password;
         this.createAt = LocalDateTime.now();
     }
+
+    // 등급업 처리
+    public void promoteToPremium() {
+
+        this.role = Role.PREMIUM;
+    }
 }

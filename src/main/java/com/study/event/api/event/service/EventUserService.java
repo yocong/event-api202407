@@ -238,4 +238,24 @@ public class EventUserService {
                 .token(token)
                 .build();
     }
+
+    // 등업 처리
+    public LoginResponseDto promoteToPremium(String userId) {
+        // 회원 탐색
+        EventUser eventUser = eventUserRepository.findById(userId).orElseThrow();
+
+        // 등급 변경 (변경하려면? premium으로 변경 후에 다시 save)
+        eventUser.promoteToPremium();
+        EventUser promotedUser = eventUserRepository.save(eventUser);
+
+        // 등급 변경 후에 토큰 재발급해야함
+        String token = tokenProvider.createToken(eventUser);
+
+        return LoginResponseDto.builder()
+                .token(token)
+                .role(promotedUser.getRole().toString())
+                .email(promotedUser.getEmail())
+                .build();
+
+    }
 }
