@@ -23,6 +23,7 @@ import java.util.Map;
 public class TokenProvider {
 
     // 서명에 사용할 512비트의 랜덤 문자열 비밀키
+    // -> test클래스에서 발급받은 토큰을 yml에서 설정
     @Value("${jwt.secret}")
     private String SECRET_KEY;
     /*
@@ -61,7 +62,7 @@ public class TokenProvider {
                     , SignatureAlgorithm.HS512
             )
             // payload에 들어갈 클레임 설정
-            .setClaims(claims) // 추가 클레임, 항상 가장 먼저 설정!!
+            .setClaims(claims) // 추가 클레임, 추가 클레임은 항상 가장 먼저 설정해줘야함 !
             .setIssuer("메롱메롱") // 발급자 정보
             .setIssuedAt(new Date()) // 발급시간
             .setExpiration(Date.from(

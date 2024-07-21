@@ -24,6 +24,9 @@ import java.util.List;
 import static com.study.event.api.auth.TokenProvider.*;
 
 // 클라이언트가 요청에 포함한 토큰정보를 검사하는 필터
+// controller보다 먼저 요청을 받는 객체를 만들어 토큰정보를 검사함!
+// filter를 만들어 기존의 filterchain에 연결시켜주면됨
+// -> 이 filter가 없으면 controller에서 모든 요청에 대해 토큰 정보 검사 로직이 필요하게됨
 @Component
 @Slf4j
 @RequiredArgsConstructor
@@ -99,6 +102,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
              }
          */
 
+        // 헤더에서 Authorization를 따로 빼옴
         String bearerToken = request.getHeader("Authorization");
 
         // 토큰에 붙어있는 Bearer라는 문자열을 제거

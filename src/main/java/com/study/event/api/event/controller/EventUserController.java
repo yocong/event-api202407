@@ -61,7 +61,7 @@ public class EventUserController {
 
         try {
             // 사용자가 회원가입시 입력한 정보(LoginRequestDto) 회원 로그인 인증
-            // 로그인 정보가 맞다면 LoginResponseDto에 성공 정보를 담아 responseDto 반환 (이메일 ,토큰, 권한정보 포함)
+            // 로그인 정보가 맞다면(로그인 성공) 토큰 생성해서 LoginResponseDto에 성공 정보를 담아 반환
             LoginResponseDto responseDto = eventUserService.authenticate(dto);
             return ResponseEntity.ok().body(responseDto);
         } catch (LoginFailException e) {
