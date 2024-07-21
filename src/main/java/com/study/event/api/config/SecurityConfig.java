@@ -20,6 +20,7 @@ import org.springframework.web.filter.CorsFilter;
 // OAuth2 - SNS로그인
 @EnableWebSecurity
 // 컨트롤러에서 사전, 사후에 권한정보를 캐치해서 막을건지
+// ->  실행 전에 또는 실행 후에 특정 보안 조건을 검사
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
 public class SecurityConfig {
