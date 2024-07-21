@@ -52,13 +52,14 @@ public class EventUser {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    // Builder로 객체 생성시 따로 필드 설정안하면 @Builder.Default에 지정된 기본값이 사용됨, 여기서는 Role의 기본값을 COMMON으로 함
     @Builder.Default
     private Role role = Role.COMMON; // 권한
 
     private LocalDateTime createAt; // 회원가입 시간
 
     @OneToMany(mappedBy = "eventUser", orphanRemoval = true, cascade = CascadeType.ALL)
-    @Builder.Default
+    @Builder.Default // eventList는 빈 리스트가 기본값
     private List<Event> eventList = new ArrayList<>();
 
     // 이메일 인증을 완료했는지 여부

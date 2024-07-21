@@ -53,6 +53,8 @@ public class EventUserService {
             return false;
         }
 
+        // 중복이 아니면 선제적으로 회원가입을 시킴
+        // -> 다른 사용자가 동일한 이메일 가입 시도 하는 것 차단, 회원가입 절차만 이어갈 수 있게 이미 가입은 시켜놓음
         // 일련의 후속 처리 (데이터베이스 처리, 이메일 보내는 것...)
         if (!exists) processSignUp(email);
 
@@ -62,6 +64,7 @@ public class EventUserService {
     private boolean notFinish(String email) {
         EventUser eventUser = eventUserRepository.findByEmail(email).orElseThrow();
 
+        // 이메일이 인증이 안됐거나 비밀번호가 아직 없으면 기존 인증코드를 삭제하고 재발송
         if (!eventUser.isEmailVerified() || eventUser.getPassword() == null) {
             // 기존 인증코드가 있는 경우 삭제
             EmailVerification ev = emailVerificationRepository
@@ -77,6 +80,7 @@ public class EventUserService {
         return false;
     }
 
+    // 회원가입 시킴
     public void processSignUp(String email) {
 
         // 1. 임시 회원가입
@@ -99,7 +103,7 @@ public class EventUserService {
         EmailVerification verification = EmailVerification.builder()
                 .verificationCode(code) // 인증 코드
                 .expiryDate(LocalDateTime.now().plusMinutes(5)) // 만료 시간 (5분 뒤)
-                .eventUser(eventUser) // FK
+                .eventUser(eventUser) // FK (JPA는 정보를 통으로 주면 알아서 필요한 것만 꺼내서 씀)
                 .build();
 
         emailVerificationRepository.save(verification);
@@ -114,7 +118,7 @@ public class EventUserService {
         // 이메일을 전송할 객체 생성
         MimeMessage mimeMessage = mailSender.createMimeMessage();
 
-        try {
+        try { // multipart : false -> 하나의 콘텐츠 타입, true -> 여러 콘텐츠 타입 (텍스트 + HTML ..)
             MimeMessageHelper messageHelper = new MimeMessageHelper(mimeMessage, false, "UTF-8");
 
             // 누구에게 이메일을 보낼 것인지
@@ -154,11 +158,12 @@ public class EventUserService {
         EventUser eventUser = eventUserRepository.findByEmail(email)
                 .orElse(null);
 
+        // 회원정보가 있다면?
         if (eventUser != null) {
             // 인증코드가 있는지 탐색
             EmailVerification ev = emailVerificationRepository.findByEventUser(eventUser).orElse(null);
 
-            // 인증코드가 있고 만료시간이 지나지 않았고 코드번호가 일치할 경우
+            // 인증코드가 있고, 만료시간이 지나지 않았고, 코드번호가 일치할 경우
             if (
                     ev != null
                             && ev.getExpiryDate().isAfter(LocalDateTime.now())
@@ -172,7 +177,7 @@ public class EventUserService {
                 emailVerificationRepository.delete(ev);
                 return true;
             } else {  // 인증코드가 틀렸거나 만료된 경우
-                // 인증코드 재발송
+                // 인증코드 재발송!
                 // 원래 인증 코드 삭제
                 emailVerificationRepository.delete(ev);
 
