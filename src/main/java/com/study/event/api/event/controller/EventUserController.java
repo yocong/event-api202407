@@ -74,12 +74,12 @@ public class EventUserController {
     // Premium회원으로 등급업하는 요청처리
     @PutMapping("/promote")
     public ResponseEntity<?> promote(
-            @AuthenticationPrincipal TokenUserInfo userInfo
+            @AuthenticationPrincipal TokenUserInfo userInfo // 로그인한 사용자의 토큰정보
     ) {
 
-        try {
+        try { // 토큰정보에 있는 userId를 받아서 등급업처리
             LoginResponseDto dto = eventUserService.promoteToPremium(userInfo.getUserId());
-            return ResponseEntity.ok().body(dto);
+            return ResponseEntity.ok().body(dto); // 로그인 응답 정보 반환
         } catch (NoSuchElementException e) {
             log.warn(e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());

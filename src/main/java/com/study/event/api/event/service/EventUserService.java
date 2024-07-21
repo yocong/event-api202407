@@ -256,6 +256,7 @@ public class EventUserService {
         // 등급 변경 후에 토큰 재발급해야함
         String token = tokenProvider.createToken(eventUser);
 
+        // 재발급 후에 LoginResponseDto에 담아 객체 생성
         return LoginResponseDto.builder()
                 .token(token)
                 .role(promotedUser.getRole().toString())
