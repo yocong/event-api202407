@@ -3,6 +3,7 @@ package com.study.event.api.event.controller;
 import com.study.event.api.auth.TokenProvider;
 import com.study.event.api.event.dto.request.EventUserSaveDto;
 import com.study.event.api.event.dto.request.LoginRequestDto;
+import com.study.event.api.event.dto.request.TokenRefreshRequestDto;
 import com.study.event.api.event.dto.response.LoginResponseDto;
 import com.study.event.api.event.service.EventUserService;
 import com.study.event.api.exception.LoginFailException;
@@ -62,12 +63,32 @@ public class EventUserController {
         try {
             // 사용자가 회원가입시 입력한 정보(LoginRequestDto) 회원 로그인 인증
             // 로그인 정보가 맞다면(로그인 성공) 토큰 생성해서 LoginResponseDto에 성공 정보를 담아 반환
-            LoginResponseDto responseDto = eventUserService.authenticate(dto);
+            LoginResponseDto responseDto = eventUserService.authenticate(dto, dto.isAutoLogin());
             return ResponseEntity.ok().body(responseDto);
         } catch (LoginFailException e) {
             // service에서 예외발생 (로그인 실패)
             String errorMessage = e.getMessage();
             return ResponseEntity.status(422).body(errorMessage);
+        }
+    }
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<?> refreshToken(@RequestBody TokenRefreshRequestDto request) {
+        try {
+            LoginResponseDto responseDto = eventUserService.refreshToken(request.getRefreshToken());
+            return ResponseEntity.ok().body(responseDto);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(@AuthenticationPrincipal TokenUserInfo userInfo) {
+        try {
+            eventUserService.logout(userInfo.getEmail());
+            return ResponseEntity.ok().body("Logged out successfully");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 

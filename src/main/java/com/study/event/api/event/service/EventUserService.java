@@ -6,8 +6,10 @@ import com.study.event.api.event.dto.request.LoginRequestDto;
 import com.study.event.api.event.dto.response.LoginResponseDto;
 import com.study.event.api.event.entity.EmailVerification;
 import com.study.event.api.event.entity.EventUser;
+import com.study.event.api.event.entity.RefreshToken;
 import com.study.event.api.event.repository.EmailVerificationRepository;
 import com.study.event.api.event.repository.EventUserRepository;
+import com.study.event.api.event.repository.RefreshTokenRepository;
 import com.study.event.api.exception.LoginFailException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +21,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.mail.internet.MimeMessage;
+import java.time.Instant;
 import java.time.LocalDateTime;
+
+import static com.study.event.api.event.entity.QRefreshToken.refreshToken;
 
 @Service
 @Slf4j
@@ -32,6 +37,7 @@ public class EventUserService {
 
     private final EventUserRepository eventUserRepository;
     private final EmailVerificationRepository emailVerificationRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     // 이메일 전송 객체
     private final JavaMailSender mailSender;
@@ -209,7 +215,7 @@ public class EventUserService {
     }
 
     // 회원 인증처리
-    public LoginResponseDto authenticate(final LoginRequestDto dto) {
+    public LoginResponseDto authenticate(final LoginRequestDto dto, boolean rememberMe) {
 
         // 이메일을 통해 회원정보 조회
         EventUser eventUser = eventUserRepository
@@ -237,11 +243,60 @@ public class EventUserService {
         // 토큰 생성
         String token = tokenProvider.createToken(eventUser);
 
-        return LoginResponseDto.builder()
+        LoginResponseDto responseDto = LoginResponseDto.builder()
                 .email(eventUser.getEmail())
                 .role(eventUser.getRole().toString())
                 .token(token)
                 .build();
+
+        if (rememberMe) {
+            String refreshToken = tokenProvider.createRefreshToken();
+            saveRefreshToken(eventUser, refreshToken);
+            responseDto.setRefreshToken(refreshToken);
+            log.info("refreshToken : {}", refreshToken);
+
+        }
+
+        return responseDto;
+    }
+
+    private void saveRefreshToken(EventUser eventUser, String refreshToken) {
+        RefreshToken refreshTokenEntity = RefreshToken.builder()
+                .eventUser(eventUser)
+                .token(refreshToken)
+                .expiryDate(Instant.now().plusMillis(tokenProvider.getRefreshTokenExpirationDays() * 24 * 60 * 60 * 1000))
+                .build();
+        refreshTokenRepository.save(refreshTokenEntity);
+    }
+
+    public LoginResponseDto refreshToken(String refreshToken) {
+        return refreshTokenRepository.findByToken(refreshToken)
+                .map(this::verifyExpiration)
+                .map(RefreshToken::getEventUser)
+                .map(eventUser -> {
+                    String accessToken = tokenProvider.createToken(eventUser);
+                    return LoginResponseDto.builder()
+                            .email(eventUser.getEmail())
+                            .role(eventUser.getRole().toString())
+                            .token(accessToken)
+                            .refreshToken(refreshToken)
+                            .build();
+                })
+                .orElseThrow(() -> new RuntimeException("Refresh token is not in database!"));
+    }
+
+    private RefreshToken verifyExpiration(RefreshToken token) {
+        if (token.getExpiryDate().compareTo(Instant.now()) < 0) {
+            refreshTokenRepository.delete(token);
+            throw new RuntimeException("Refresh token was expired. Please make a new signin request");
+        }
+        return token;
+    }
+
+    public void logout(String email) {
+        EventUser eventUser = eventUserRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        refreshTokenRepository.deleteByEventUser(eventUser);
     }
 
     // 등업 처리

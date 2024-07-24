@@ -26,12 +26,26 @@ public class TokenProvider {
     // -> test클래스에서 발급받은 토큰을 yml에서 설정
     @Value("${jwt.secret}")
     private String SECRET_KEY;
+
+    @Getter
+    @Value("${jwt.refresh-token-expiration-days}")
+    private int refreshTokenExpirationDays;
+
+    public String createRefreshToken() {
+        return Jwts.builder()
+                .setIssuedAt(new Date())
+                .setExpiration(Date.from(Instant.now().plus(refreshTokenExpirationDays, ChronoUnit.DAYS)))
+                .signWith(Keys.hmacShaKeyFor(SECRET_KEY.getBytes()), SignatureAlgorithm.HS512)
+                .compact();
+    }
+
+
+
     /*
     * JWT를 생성하는 메서드
     * @param eventUser - 토큰에 포함될 로그인한 유저의 정보
     * @return - 생성된  JWT의 암호화된 문자열
     */
-
     public String createToken(EventUser eventUser) {
     /*
         토큰의 형태

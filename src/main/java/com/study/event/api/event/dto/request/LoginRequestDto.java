@@ -13,5 +13,5 @@ public class LoginRequestDto {
 
     private String email;
     private String password;
-    // 자동로그인 여부 ...
+    private boolean autoLogin; // 자동로그인 여부 추가
 }
